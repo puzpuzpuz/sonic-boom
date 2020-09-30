@@ -2,12 +2,14 @@
 
 const bench = require('fastbench')
 const SonicBoom = require('./')
+const SemiSyncSonicBoom = require('./semi-sync')
 const Console = require('console').Console
 const fs = require('fs')
 
 const core = fs.createWriteStream('/dev/null')
 const fd = fs.openSync('/dev/null', 'w')
 const sonic = new SonicBoom({ fd })
+const semiSyncSonic = new SemiSyncSonicBoom({ fd })
 const sonic4k = new SonicBoom({ fd, minLength: 4096 })
 const sonicSync = new SonicBoom({ fd, sync: true })
 const sonicSync4k = new SonicBoom({ fd, minLength: 4096, sync: true })
@@ -28,6 +30,12 @@ function str () {
 setTimeout(doBench, 100)
 
 const run = bench([
+  function benchSonicSemiSync (cb) {
+    semiSyncSonic.once('drain', cb)
+    for (let i = 0; i < MAX; i++) {
+      semiSyncSonic.write(str())
+    }
+  },
   function benchSonic (cb) {
     sonic.once('drain', cb)
     for (let i = 0; i < MAX; i++) {
